@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -315,7 +316,7 @@
                         <p class="docs-text">Lu bisa nge-fetch email masuk lewat API menggunakan *API Key* yang ada di halaman API Access.</p>
                         <div class="docs-code-block">
 // GET /api/inbox/:email
-fetch(`https://api.tempzero.my.id/v1/inbox/${encodeURIComponent('youremail@tempzero.my.id')}`, {
+fetch(`https://api.tempzero.my.id/inbox/${encodeURIComponent('youremail@tempzero.my.id')}`, {
   headers: {
     'Authorization': 'Bearer tz_live_YOUR_API_KEY',
     'Content-Type': 'application/json'
@@ -471,7 +472,8 @@ fetch(`https://api.tempzero.my.id/v1/inbox/${encodeURIComponent('youremail@tempz
             const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout protection
 
             try {
-                const res = await fetch(`/api/inbox/${encodeURIComponent(AppState.email)}`, { signal: controller.signal });
+                // FIXED: Direct to production Cloudflare API Worker
+                const res = await fetch(`https://api.tempzero.my.id/inbox/${encodeURIComponent(AppState.email)}`, { signal: controller.signal });
                 clearTimeout(timeoutId);
 
                 const contentType = res.headers.get('content-type');

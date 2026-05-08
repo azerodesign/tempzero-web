@@ -473,7 +473,7 @@ fetch(`https://api.tempzero.my.id/inbox/${encodeURIComponent('youremail@tempzero
 
             try {
                 // FIXED: Direct to production Cloudflare API Worker
-                const res = await fetch(`https://api.tempzero.my.id/inbox/${encodeURIComponent(AppState.email)}`, { signal: controller.signal });
+                const res = await fetch(`https://temp.azero.my.id/inbox/${encodeURIComponent(AppState.email)}`, { signal: controller.signal });
                 clearTimeout(timeoutId);
 
                 const contentType = res.headers.get('content-type');

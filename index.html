@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tempzero Webmail</title>
+    <!-- Core Icons & Security Sanitizer -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <style>
@@ -50,6 +51,7 @@
         .sidebar-header h3 { color: var(--text-main); font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; }
         .close-sidebar-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
         .close-sidebar-btn:hover { color: var(--text-main); }
+
         .sidebar-menu { padding: 20px 0; display: flex; flex-direction: column; flex: 1; }
         .sidebar-item { padding: 16px 24px; display: flex; align-items: center; gap: 12px; color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; cursor: pointer; }
         .sidebar-item i { font-size: 1.3rem; }
@@ -62,7 +64,6 @@
         .page-view { display: none; flex: 1; flex-direction: column; width: 100%; height: 100%; background-color: var(--dark-bg); overflow-y: auto; overflow-x: hidden; }
         .page-view.active { display: flex; }
 
-        /* Inbox View */
         #page-inbox { position: relative; overflow: hidden; }
         .inbox-list-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 24px 20px; overflow-y: auto; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .inbox-list-view.slide-out { transform: translateX(-100%); }
@@ -180,6 +181,7 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- TOP SECTION -->
         <div class="top-section">
             <div class="navbar">
                 <div class="logo-container">
@@ -215,11 +217,14 @@
             <div class="toast" id="main-toast"><h4>WELCOME</h4><p>System is ready 🙌</p></div>
         </div>
 
+        <!-- VIEW CONTROLLER -->
         <div class="view-container">
+            <!-- PAGE 1: INBOX -->
             <div id="page-inbox" class="page-view active">
                 <div class="inbox-list-view inbox-centered" id="view-list">
                     <div class="empty-state" id="empty-msg">Empty Inbox</div>
                     
+                    <!-- SKELETON LOADER -->
                     <div class="skeleton-loader" id="skeleton-loader">
                         <div class="skeleton-item">
                             <div class="skeleton-header"><div class="skeleton-line sk-sender"></div><div class="skeleton-line sk-time"></div></div>
@@ -254,6 +259,7 @@
                 </div>
             </div>
 
+            <!-- PAGE 2: SETTINGS -->
             <div id="page-settings" class="page-view generic-page-container">
                 <h2 class="page-title"><i class="ph-fill ph-gear"></i> Settings</h2>
                 <div class="settings-card">
@@ -278,6 +284,7 @@
                 </div>
             </div>
 
+            <!-- PAGE 3: API ACCESS -->
             <div id="page-api" class="page-view generic-page-container">
                 <h2 class="page-title"><i class="ph-fill ph-code"></i> API Access</h2>
                 <div class="settings-card" style="padding: 20px 16px;">
@@ -291,6 +298,7 @@
                 </div>
             </div>
 
+            <!-- PAGE 4: DOCS -->
             <div id="page-docs" class="page-view generic-page-container">
                 <h2 class="page-title"><i class="ph-fill ph-file-text"></i> Documentation</h2>
                 <div class="settings-card" style="padding: 24px 16px;">
@@ -321,6 +329,7 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
             </div>
         </div>
 
+        <!-- SIDEBAR -->
         <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarOverlay(event)"></div>
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -336,6 +345,7 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
             <div class="sidebar-footer">&copy; 2026 Azero UI</div>
         </div>
 
+        <!-- MODAL GENERATE NEW EMAIL -->
         <div class="modal-overlay" id="new-email-modal" onclick="closeModal(event)">
             <div class="modal-content" onclick="event.stopPropagation()">
                 <div class="modal-header">
@@ -459,7 +469,7 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
             const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
             try {
-                // FIXED: URL Cloudflare Worker Terbaru
+                // Endpoint Cloudflare
                 const res = await fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent(AppState.email)}`, { signal: controller.signal });
                 clearTimeout(timeoutId);
 
@@ -468,21 +478,37 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
                     throw new Error('Invalid content type, expected JSON');
                 }
                 
-                const data = await res.json();
-                if (!Array.isArray(data)) throw new Error('Invalid response format: Data is not an array');
+                const rawData = await res.json();
+                if (!Array.isArray(rawData)) throw new Error('Invalid response format: Data is not an array');
                 
-                const sortedData = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
+                // Sorting & Unique Mapping logic based on new backend schema
+                const sortedData = [...rawData].sort((a, b) => (b.id || 0) - (a.id || 0));
                 
+                // Hash Check for Performance
                 const dataHash = sortedData.length ? `${sortedData[0]?.id}_${sortedData.length}` : 'empty';
                 
                 if (dataHash !== AppState.lastInboxHash) {
                     const isNewEmail = sortedData.length > AppState.emails.length && AppState.emails.length > 0;
                     AppState.lastInboxHash = dataHash;
-                    AppState.emails = sortedData;
+
+                    // UPDATED: Mapping backend schema to frontend expectations
+                    AppState.emails = sortedData.map(mail => ({
+                        id: mail.id,
+                        sender: mail.sender || "Unknown",
+                        senderEmail: mail.sender || "",
+                        subject: mail.subject || "(No Subject)",
+                        snippet: (mail.body || "").slice(0, 120),
+                        bodyText: mail.body || "",
+                        // Format created_at to readable local string
+                        time: mail.created_at ? new Date(mail.created_at).toLocaleString() : new Date().toLocaleString(),
+                        otpCode: mail.otp || null,
+                        type: mail.otp ? "otp" : "email"
+                    }));
+
                     renderEmailList();
                     
                     if (!isSilent) {
-                        showNotification('INBOX UPDATED', `Found ${AppState.emails.length} emails.`);
+                        showNotification('INBOX UPDATED', `Ditemukan ${AppState.emails.length} pesan.`);
                     } else if (isNewEmail) {
                         showNotification('NEW EMAIL', 'Ada pesan baru masuk!');
                     }
@@ -525,7 +551,8 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
                 const senderSpan = document.createElement('span');
                 senderSpan.className = 'email-sender';
                 
-                const isOtp = email.type === 'otp' || (email.snippet && email.snippet.match(/\b([A-Z0-9]{5,8}|\d{4,6})\b/i));
+                // Detection for icon
+                const isOtp = email.type === 'otp';
                 const iconNode = document.createElement('i');
                 if (isOtp) {
                     iconNode.className = 'ph-fill ph-lock-key';
@@ -541,14 +568,14 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
 
                 const timeSpan = document.createElement('span');
                 timeSpan.className = 'email-time';
-                timeSpan.textContent = email.time || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                timeSpan.textContent = email.time;
 
                 headerDiv.appendChild(senderSpan);
                 headerDiv.appendChild(timeSpan);
 
                 const subjDiv = document.createElement('div');
                 subjDiv.className = 'email-subject';
-                subjDiv.textContent = email.subject || 'No Subject';
+                subjDiv.textContent = email.subject;
 
                 const snipDiv = document.createElement('div');
                 snipDiv.className = 'email-snippet';
@@ -578,14 +605,14 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
             const email = AppState.emails.find(e => e.id === id);
             if(!email) return;
 
-            document.getElementById('det-subj').textContent = email.subject || 'No Subject';
-            document.getElementById('det-sender').textContent = `${email.sender || 'Unknown'} <${email.senderEmail || ''}>`;
-            document.getElementById('det-time').textContent = email.time || '';
+            document.getElementById('det-subj').textContent = email.subject;
+            document.getElementById('det-sender').textContent = `${email.sender} <${email.senderEmail}>`;
+            document.getElementById('det-time').textContent = email.time;
             
             const bodyContainer = document.getElementById('det-body');
             bodyContainer.innerHTML = ''; 
             
-            const safeHTML = DOMPurify.sanitize(email.bodyText || '<p>No content</p>', { USE_PROFILES: { html: true } });
+            const safeHTML = DOMPurify.sanitize(email.bodyText, { USE_PROFILES: { html: true } });
 
             if (email.type === 'otp' && email.otpCode) {
                 const safeCode = String(email.otpCode).replace(/[^a-zA-Z0-9-]/g, '');
@@ -608,7 +635,7 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
                 const btnIcon = document.createElement('i');
                 btnIcon.className = 'ph ph-copy';
                 btn.appendChild(btnIcon);
-                btn.appendChild(document.createTextNode(' Copy Code'));
+                btn.appendChild(document.createTextNode(' Salin Kode'));
                 
                 btn.onclick = (e) => copyOtp(e.currentTarget.dataset.code);
 
@@ -617,7 +644,7 @@ fetch(`https://temp.azero.my.id/api/inbox/${encodeURIComponent('youremail@tempze
 
                 const footerP = document.createElement('p');
                 footerP.style.cssText = 'font-size: 0.8rem; color: #555;';
-                footerP.textContent = 'If you did not request this code, you can safely ignore this email.';
+                footerP.textContent = 'Jika lu nggak ngerasa minta kode ini, cuekin aja emailnya.';
 
                 bodyContainer.appendChild(bodyP);
                 bodyContainer.appendChild(otpCont);
